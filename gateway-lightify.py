@@ -115,7 +115,7 @@ class Server():
 			}
 		
 			# Publish the current state of the light
-			self.client.publishEvent(self.typeId, deviceId, "state", "json", state)
+			self.client.publishEvent(typeId, deviceId, "state", "json", state)
 			from pprint import pprint
 			print(state)
 		
