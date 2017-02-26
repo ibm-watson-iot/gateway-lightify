@@ -29,7 +29,6 @@ class Server():
 		
 		self.options = ibmiotf.application.ParseConfigFile(args.config)
 		
-		self.lightifyTypeId = "lightify-light"
 		self.lightifyTypeDescription = "Light connected to OSRAM Lightify Gateway"
 		
 		# Init IOTF client
@@ -116,7 +115,7 @@ class Server():
 			}
 		
 			# Publish the current state of the light
-			self.client.publishEvent(self.lightifyTypeId, deviceId, "state", "json", state)
+			self.client.publishEvent(self.typeId, deviceId, "state", "json", state)
 			from pprint import pprint
 			print(state)
 		
@@ -125,15 +124,6 @@ class Server():
 		self.client.connect()
 		self.lightify = Lightify(self.lightifyAddress)
 		
-		# Register the device type if we need to
-		try:
-			deviceType = self.client.api.getDeviceType(self.lightifyTypeId)
-		except APIException as e:
-			self.logger.debug("ERROR [" + str(e.httpCode) + "] " + e.message)
-			self.logger.info("Registering new device type: %s" % (self.lightifyTypeId))
-			
-			deviceType = self.client.api.addDeviceType(typeId=self.lightifyTypeId, description=self.lightifyTypeDescription)
-
 		while True:
 			self._poll()
 			time.sleep(60)
