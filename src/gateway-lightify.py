@@ -16,7 +16,7 @@ from lightify import Lightify
 
 class Server():
 
-	def __init__(self, args):
+	def __init__(self, ip, apikey, apitoken):
 		# Setup logging - Generate a default rotating file log handler and stream handler
 		fhFormatter = logging.Formatter('%(asctime)-25s %(levelname)-7s %(message)s')
 		sh = logging.StreamHandler()
@@ -27,7 +27,7 @@ class Server():
 		self.logger.addHandler(sh)
 		self.logger.setLevel(logging.DEBUG)
 		
-		self.options = ibmiotf.application.ParseConfigFile(args.config)
+		self.options = {"auth-key": apikey, "auth-token": apitoken}
 		
 		self.lightifyTypeDescription = "Light connected to OSRAM Lightify Gateway"
 		
