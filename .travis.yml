@@ -1,8 +1,12 @@
+language: minimal
+
 services:
   - docker
 
 install:
-  - docker build -t wiotp/gateway-lightify:$TRAVIS_BRANCH .
   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+
+script:
+  - docker build -t wiotp/gateway-lightify:$TRAVIS_BRANCH .
   - docker push wiotp/gateway-lightify:$TRAVIS_BRANCH
 
