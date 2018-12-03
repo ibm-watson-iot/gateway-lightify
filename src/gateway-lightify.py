@@ -1,33 +1,29 @@
+import os
 import sys
 import json
 import time
-import ibmiotf.application
-from ibmiotf import APIException
-
-import requests
 import signal
-
-import argparse
 import logging
-from logging.handlers import RotatingFileHandler
 
+import ibmiotf.application
+from ibmiotf.api.registry.devices import DeviceInfo, DeviceCreateRequest
 from lightify import Lightify
 
 
 class Server():
 
-	def __init__(self, args):
+	def __init__(self, ip, interval, apikey, apitoken):
 		# Setup logging - Generate a default rotating file log handler and stream handler
 		fhFormatter = logging.Formatter('%(asctime)-25s %(levelname)-7s %(message)s')
 		sh = logging.StreamHandler()
 		sh.setFormatter(fhFormatter)
 		
-		self.version = "0.1.0"
+		self.version = "0.2.0"
 		self.logger = logging.getLogger("server")
 		self.logger.addHandler(sh)
 		self.logger.setLevel(logging.DEBUG)
 		
-		self.options = ibmiotf.application.ParseConfigFile(args.config)
+		self.options = {"auth-key": apikey, "auth-token": apitoken}
 		
 		self.lightifyTypeDescription = "Light connected to OSRAM Lightify Gateway"
 		
@@ -39,17 +35,21 @@ class Server():
 		self.knownDeviceTypes = {}
 
 		# Init Hue properties
-		self.lightifyAddress = args.ip
-		
+		self.lightifyAddress = ip
+		self.logger.info("Connecting to Lightify at %s" % ip)
+
+		self.pollingInterval = interval
+
 		self.username = ""
 		self.password = ""
 		self.serial   = ""
 		
 		#self._startLightifySession()
-		
+
+
+	"""		
 	def _startLightifySession(self):
-		# Sorry, for initial version, only going to support EU -- session lasts for 15 minutes
-		# Not actually used yet though
+		# Not actually used ... but kept for reference
 		
 		headers = {"Content-Type": "application/json"}
 		body = {
@@ -60,45 +60,49 @@ class Server():
 		
 		r = requests.post("https://eu.lightify-api.org/lightify/services/session", headers=headers, data=json.dumps(body))
 		# Check response code
-		credentials = r.json();
+		credentials = r.json()
 		print(credentials)
-	
+	"""
+
 	def _poll(self):
 		self.lightify.update_all_light_status()
 		lights = self.lightify.lights()
 		for key in lights.keys():
-			print(key)
-			print(format(key, 'x'))
-			print('-'.join(format(key, 'x')[i:i+2] for i in range(0,16,2)))
+			#print(key)
+			#print(format(key, 'x'))
+			#print('-'.join(format(key, 'x')[i:i+2] for i in range(0,16,2)))
 
 			light = lights[key]
 			typeId = "lightify-%s" % light.type()
 			deviceId = light.mac()
 			
+			deviceRegistry = self.client.api.registry
 			# Register the device type if we need to
 			if typeId not in self.knownDeviceTypes:
-				try:
-					deviceType = self.client.api.getDeviceType(typeId)
+				if typeId in deviceRegistry.devicetypes:
+					deviceType = deviceRegistry.devicetypes[typeId]
 					self.knownDeviceTypes[typeId] = deviceType
-				except APIException as e:
-					self.logger.debug("ERROR [" + str(e.httpCode) + "] " + e.message)
+				else:
 					self.logger.info("Registering new device type: %s" % (typeId))
-					
-					deviceType = self.client.api.addDeviceType(typeId=typeId, description=None, deviceInfo=None)
+					deviceType = deviceRegistry.devicetypes.create({"id": typeId})
 					self.knownDeviceTypes[typeId] = deviceType
 			
 			# Register the device if we need to
 			if deviceId not in self.knownDevices:
-				try:
-					device = self.client.api.getDevice(typeId, deviceId)
+				if deviceId in deviceRegistry.devicetypes[typeId].devices:
+					device = deviceRegistry.devicetypes[typeId].devices[deviceId]
 					self.knownDevices[deviceId] = device
-				except APIException as e:
-					self.logger.debug("ERROR [" + str(e.httpCode) + "] " + e.message)
+				else:
 					self.logger.info("Registering new device: %s:%s" % (typeId, deviceId))
 					
-					deviceMetadata = { "lightify-gateway": { "version": self.version } }
-					deviceInfo = {"model": light.id(), "fwVersion" : light.fwVersion()}
-					device = self.client.api.registerDevice(typeId, deviceId, authToken=None, deviceInfo=deviceInfo, location=None, metadata=deviceMetadata)
+					createData = DeviceCreateRequest(
+						typeId=typeId, 
+						deviceId=deviceId, 
+						deviceInfo=DeviceInfo(model=light.id(), fwVersion=light.fwVersion()),
+						metadata={ "lightify-gateway": { "version": self.version } }
+					)
+
+					device = deviceRegistry.devices.create(createData)
 					self.knownDevices[deviceId] = device
 			
 			state = {
@@ -116,8 +120,7 @@ class Server():
 		
 			# Publish the current state of the light
 			self.client.publishEvent(typeId, deviceId, "state", "json", state)
-			from pprint import pprint
-			print(state)
+			self.logger.debug("Published event for %s:%s: %s" % (typeId, deviceId, json.dumps(state)))
 		
 	
 	def start(self):
@@ -126,8 +129,7 @@ class Server():
 		
 		while True:
 			self._poll()
-			time.sleep(60)
-		
+			time.sleep(self.pollingInterval)
 		
 	def stop(self):
 		self.client.disconnect()
@@ -141,14 +143,12 @@ def interruptHandler(signal, frame):
 if __name__ == "__main__":
 	signal.signal(signal.SIGINT, interruptHandler)
 
-	# Initialize the properties we need
-	parser = argparse.ArgumentParser()
-	parser.add_argument('-c', '--config', required=False)
-	parser.add_argument('-i', '--ip', required=True)
-
-	args, unknown = parser.parse_known_args()
+	key      = os.getenv("WIOTP_API_KEY")
+	token    = os.getenv("WIOTP_API_TOKEN")
+	ipAddr   = os.getenv("LIGHTIFY_IP")
+	interval = os.getenv("INTERVAL", "60")
 
 	print("(Press Ctrl+C to disconnect)")
 
-	server = Server(args)
+	server = Server(ipAddr, int(interval), key, token)
 	server.start()

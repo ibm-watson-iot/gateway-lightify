@@ -1,0 +1,3 @@
+ibmiotf
+https://github.com/durera/python-lightify/archive/master.zip
+requests
