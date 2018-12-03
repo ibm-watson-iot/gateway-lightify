@@ -9,4 +9,8 @@ install:
 script:
   - docker build -t wiotp/gateway-lightify:$TRAVIS_BRANCH .
   - docker push wiotp/gateway-lightify:$TRAVIS_BRANCH
-
+  - |
+    if [ "$TRAVIS_BRANCH" == "master" ]; then
+      docker tag wiotp/gateway-lightify:$TRAVIS_BRANCH wiotp/gateway-lightify:latest
+      docker push wiotp/gateway-lightify:latest
+    fi
