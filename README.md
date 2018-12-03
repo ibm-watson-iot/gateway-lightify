@@ -1,5 +1,8 @@
 # IoT Gateway Application for OSRAM Lightify
 
+[![Build Status](https://travis-ci.org/ibm-watson-iot/gateway-lightify.svg?branch=master)](https://travis-ci.org/ibm-watson-iot/gateway-lightify)
+
+
 Connect your OSRAM Lightify Hub to Watson IoT.
 
 - [IBM Watson IoT](https://internetofthings.ibmcloud.com)
@@ -8,22 +11,27 @@ Connect your OSRAM Lightify Hub to Watson IoT.
 
 ## Usage
 
+All configuration is handled via environment variables:
+- You need to provide the API key and token to use when connecting to Watson IoT Platform.
+- You need to provide the IP address of your Lightify Hub on the local network
+- Optionally, you can override the default (60 second) polling inverval
+
 ```
 export WIOTP_API_KEY=xxx
 export WIOTP_API_TOKEN=xxx
-export LIGHTIFY_IP=192.168.1.100
+export LIGHTIFY_IP=xxx
 export INTERVAL=60
 python src/gateway-lightify.py
 ```
 
 ## Docker
 
-See: https://hub.docker.com/r/wiotp/gateway-lightify/
+The gateway is packaged into a convenient docker image for ease of use: [wiotp/gateway-lightify/](https://hub.docker.com/r/wiotp/gateway-lightify/)
 
 ```
 export WIOTP_API_KEY=xxx
 export WIOTP_API_TOKEN=xxx
-export LIGHTIFY_IP=192.168.1.100
+export LIGHTIFY_IP=xxx
 export INTERVAL=60
 
 docker run wiotp/gateway-lightify -e WIOTP_API_KEY -e WIOTP_API_TOKEN -e LIGHTIFY_IP -e INTERVAL
