@@ -22,7 +22,7 @@ class Server():
 		self.version = "1.0.0"
 		self.logger = logging.getLogger("server")
 		self.logger.addHandler(sh)
-		self.logger.setLevel(logging.INFO)
+		self.logger.setLevel(logging.DEBUG)
 		
 		self.options = parseEnvVars()
 		
@@ -75,8 +75,8 @@ class Server():
 			#print('-'.join(format(key, 'x')[i:i+2] for i in range(0,16,2)))
 
 			light = lights[key]
-			typeId = "lightify-%s" % light.type()
-			deviceId = light.mac()
+			typeId = "lightify-%s" % light.devicetype().name
+			deviceId = light.addr()
 			
 			deviceRegistry = self.client.registry
 			# Register the device type if we need to
@@ -100,16 +100,40 @@ class Server():
 					createData = DeviceCreateRequest(
 						typeId=typeId, 
 						deviceId=deviceId, 
-						deviceInfo=DeviceInfo(model=light.id(), fwVersion=light.fwVersion()),
+						deviceInfo=DeviceInfo(model=light.devicesubtype().name, fwVersion=light.version()),
 						metadata={ "lightify-gateway": { "version": self.version } }
 					)
 
 					device = deviceRegistry.devices.create(createData)
 					self.knownDevices[deviceId] = device
 			
+			#
+			# light.
+			# name()
+			# idx()
+			# addr()
+			# reachable()
+			# last_seen()
+			# on()
+			# lum()
+			# temp()
+			# red()
+			# green()
+			# blue()
+			# rgb() 
+			# devicesubtype()
+			# devicetype()
+			# devicename()
+			# version()
+			
+			# Alpha is only available from raw_values()
+			(onoff, lum, temp, red, green, blue, alpha) = light.raw_values()
+
+			# if online is false then override on to be false, the light can't be on if it's not even powered on 
 			state = {
-				"online": True if light.online() == 1 else False,
-				"on": True if light.on() == 1 else False,
+				"online": light.reachable(),
+				"lastSeen": light.last_seen(),
+				"on": (light.reachable() and light.on()),
 				"lum": light.lum(),
 				"temp": light.temp(),
 				"colour": {
@@ -117,7 +141,7 @@ class Server():
 					"green": light.green(),
 					"blue": light.blue()
 				},
-				"alpha": light.alpha(),
+				"alpha": alpha
 			}
 		
 			# Publish the current state of the light

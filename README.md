@@ -8,7 +8,7 @@ Connect your OSRAM Lightify Hub to Watson IoT.
 - [IBM Watson IoT](https://internetofthings.ibmcloud.com)
 - [WIoTP Python SDK](https://github.com/ibm-watson-iot/iot-python)
 - [OSRAM Lightify](https://www.osram.com/lightify)
-
+- [Python module for OSRAM Lightify](https://github.com/tfriedel/python-lightify)
 
 ## Usage
 

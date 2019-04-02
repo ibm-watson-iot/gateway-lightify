@@ -1,3 +1,2 @@
 wiotp-sdk
-https://github.com/durera/python-lightify/archive/master.zip
-requests
+lightify
