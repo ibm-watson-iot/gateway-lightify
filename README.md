@@ -6,6 +6,7 @@
 Connect your OSRAM Lightify Hub to Watson IoT.
 
 - [IBM Watson IoT](https://internetofthings.ibmcloud.com)
+- [WIoTP Python SDK](https://github.com/ibm-watson-iot/iot-python)
 - [OSRAM Lightify](https://www.osram.com/lightify)
 
 
@@ -26,7 +27,7 @@ python src/gateway-lightify.py
 
 ## Docker
 
-The gateway is packaged into a convenient docker image for ease of use: [wiotp/gateway-lightify/](https://hub.docker.com/r/wiotp/gateway-lightify/)
+The gateway is packaged into a convenient docker image for ease of use: [wiotp/gateway-lightify](https://hub.docker.com/r/wiotp/gateway-lightify/)
 
 ```
 export WIOTP_API_KEY=xxx
