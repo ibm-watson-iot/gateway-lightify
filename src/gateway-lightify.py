@@ -109,32 +109,34 @@ class Server():
 			
 			#
 			# light.
-			# name()
-			# idx()
-			# addr()
-			# reachable()
-			# last_seen()
-			# on()
-			# lum()
-			# temp()
-			# red()
-			# green()
-			# blue()
-			# rgb() 
-			# devicesubtype()
-			# devicetype()
-			# devicename()
-			# version()
+			#  name()
+			#  idx()
+			#  addr()
+			#  reachable()
+			#  last_seen()
+			#  on()
+			#  lum()
+			#  temp()
+			#  red()
+			#  green()
+			#  blue()
+			#  rgb() 
+			#  devicesubtype()
+			#  devicetype()
+			#  devicename()
+			#  version()
 
 			# Alpha is only available from raw_values()
 			(onoff, lum, temp, red, green, blue, alpha) = light.raw_values()
-
+			
 			# if online is false then override on to be false, the light can't be on if it's not even powered on 
+			reallyOn = (light.reachable() and light.on())
+
 			state = {
 				"online": light.reachable(),
 				"lastSeen": light.last_seen(),
-				"on": (light.reachable() and light.on()),
-				"lum": light.lum(),
+				"on": reallyOn,
+				"lum": light.lum() if realyOn else 0,
 				"temp": light.temp(),
 				"colour": {
 					"red": light.red(),
