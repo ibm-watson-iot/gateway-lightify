@@ -136,7 +136,7 @@ class Server():
 				"online": light.reachable(),
 				"lastSeen": light.last_seen(),
 				"on": reallyOn,
-				"lum": light.lum() if realyOn else 0,
+				"lum": light.lum() if reallyOn else 0,
 				"temp": light.temp(),
 				"colour": {
 					"red": light.red(),
