@@ -4,31 +4,32 @@ import json
 import time
 import signal
 import logging
+import traceback
 
-import ibmiotf.application
-from ibmiotf.api.registry.devices import DeviceInfo, DeviceCreateRequest
+from wiotp.sdk.application import ApplicationClient, parseEnvVars
+from wiotp.sdk.api.registry.devices import DeviceInfo, DeviceCreateRequest
 from lightify import Lightify
 
 
 class Server():
 
-	def __init__(self, ip, interval, apikey, apitoken):
+	def __init__(self, ip, interval):
 		# Setup logging - Generate a default rotating file log handler and stream handler
 		fhFormatter = logging.Formatter('%(asctime)-25s %(levelname)-7s %(message)s')
 		sh = logging.StreamHandler()
 		sh.setFormatter(fhFormatter)
 		
-		self.version = "0.2.0"
+		self.version = "1.0.0"
 		self.logger = logging.getLogger("server")
 		self.logger.addHandler(sh)
-		self.logger.setLevel(logging.DEBUG)
+		self.logger.setLevel(logging.INFO)
 		
-		self.options = {"auth-key": apikey, "auth-token": apitoken}
+		self.options = parseEnvVars()
 		
 		self.lightifyTypeDescription = "Light connected to OSRAM Lightify Gateway"
 		
 		# Init IOTF client
-		self.client = ibmiotf.application.Client(self.options, logHandlers=[sh])
+		self.client = ApplicationClient(self.options, logHandlers=[sh])
 		
 		# Internal State
 		self.knownDevices = {}
@@ -65,6 +66,7 @@ class Server():
 	"""
 
 	def _poll(self):
+		self.logger.info("Running poll loop (%s second interval) ... " % self.pollingInterval)
 		self.lightify.update_all_light_status()
 		lights = self.lightify.lights()
 		for key in lights.keys():
@@ -76,7 +78,7 @@ class Server():
 			typeId = "lightify-%s" % light.type()
 			deviceId = light.mac()
 			
-			deviceRegistry = self.client.api.registry
+			deviceRegistry = self.client.registry
 			# Register the device type if we need to
 			if typeId not in self.knownDeviceTypes:
 				if typeId in deviceRegistry.devicetypes:
@@ -128,9 +130,14 @@ class Server():
 		self.lightify = Lightify(self.lightifyAddress)
 		
 		while True:
-			self._poll()
-			time.sleep(self.pollingInterval)
-		
+			try:
+				self._poll()
+				time.sleep(self.pollingInterval)
+			except Exception as e:
+				error = traceback.format_exc()
+				self.logger.info("Exiting: Caught exception: %s\n%s" % (e, error))
+				sys.exit(1)
+
 	def stop(self):
 		self.client.disconnect()
 		
@@ -143,12 +150,10 @@ def interruptHandler(signal, frame):
 if __name__ == "__main__":
 	signal.signal(signal.SIGINT, interruptHandler)
 
-	key      = os.getenv("WIOTP_API_KEY")
-	token    = os.getenv("WIOTP_API_TOKEN")
 	ipAddr   = os.getenv("LIGHTIFY_IP")
 	interval = os.getenv("INTERVAL", "60")
 
 	print("(Press Ctrl+C to disconnect)")
 
-	server = Server(ipAddr, int(interval), key, token)
+	server = Server(ipAddr, int(interval))
 	server.start()
