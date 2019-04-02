@@ -22,7 +22,7 @@ class Server():
 		self.version = "1.0.0"
 		self.logger = logging.getLogger("server")
 		self.logger.addHandler(sh)
-		self.logger.setLevel(logging.DEBUG)
+		self.logger.setLevel(logging.INFO)
 		
 		self.options = parseEnvVars()
 		
@@ -125,7 +125,7 @@ class Server():
 			# devicetype()
 			# devicename()
 			# version()
-			
+
 			# Alpha is only available from raw_values()
 			(onoff, lum, temp, red, green, blue, alpha) = light.raw_values()
 
